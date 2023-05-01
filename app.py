@@ -1,6 +1,5 @@
 from telethon import TelegramClient, sync
 from dateutil.parser import parse
-from time import sleep
 import csv
 import asyncio
 from config import api_hash, api_id
@@ -18,23 +17,29 @@ result_writer.writeheader()
 client = TelegramClient("test", api_id, api_hash)
 client.start()
 
+
 async def main():
+
+    greeting_message = await client.send_message("https://t.me/Glonass2216_bot", "Здравствуйте")
 
     for data_line in data_reader:
 
         imei = data_line["IMEI"]
 
         await client.send_message("https://t.me/Glonass2216_bot", imei)
-        sleep(0.5)
+        await asyncio.sleep(0.1)
 
-        message = (await client.get_messages("https://t.me/Glonass2216_bot"))[0]
-        # asyncio.create_task(message.click(0))
-        await message.click()
-        sleep(0.5)
+    middle_mes = await client.send_message("https://t.me/Glonass2216_bot", "Еще немного")
 
-        message = (await client.get_messages("https://t.me/Glonass2216_bot"))[0]
-        print(message)
-        sleep(0.5)
+    async with asyncio.TaskGroup() as tg:
+        async for message in client.iter_messages("https://t.me/Glonass2216_bot", min_id=greeting_message.id):
+            if message.buttons:
+                tg.create_task(message.click(0))
+                await asyncio.sleep(1.5)
+
+    async for message in client.iter_messages("https://t.me/Glonass2216_bot", min_id=middle_mes.id, search="IMEI:"):
+
+        imei = message.message.split(" ")[1]
 
         try:
             word = message.message.split(" ")[4]
